@@ -1,0 +1,16 @@
+update:
+  go mod tidy
+
+weaver_generate:
+  weaver generate .
+
+build:
+  go build .
+
+run:
+  go run .
+
+test: update weaver_generate build
+  go test .
+
+build_and_run: update weaver_generate build run

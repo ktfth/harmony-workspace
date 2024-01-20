@@ -1,0 +1,12 @@
+[serviceweaver]
+binary = ".\\harmony-engine.exe"
+
+[single]
+listeners.bin = {address = "localhost:12345"}
+
+[multi]
+listeners.bin = {address = "localhost:12345"}
+
+["harmony-engine/Prompter"]
+Driver = "mysql"
+Source = "root:@tcp(localhost:3306)/harmony"

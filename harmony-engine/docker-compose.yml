@@ -1,0 +1,54 @@
+version: '3.5'
+
+services:
+  postgres:
+    container_name: db_harmony
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=harmony
+      - POSTGRES_PASSWORD=harmony
+      - PGDATA=/data/postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres:/data/postgres
+    restart: unless-stopped
+  keycloak:
+    build: .
+    container_name: keycloak_harmony
+    image: quay.io/keycloak/keycloak:latest
+    restart: always
+    ports:
+      - 8080:8080 # Listen to HTTP on host port 80 and forward to keycloak on 8080
+      # - 80:8080
+      # - 443:8443 # Listen to HTTPS on host port 443 and forward to keycloak on 8443
+
+    # volumes:
+      #  - "/etc/letsencrypt/live/alfred.harmony.dev/fullchain.pem:/etc/x509/https/tls.crt"   # Map certificate to container
+      #  - "/etc/letsencrypt/live/alfred.harmony.dev/privkey.pem:/etc/x509/https/tls.key"   # Map private key to container
+
+    environment:
+      #- JAVA_OPTS_APPEND="-D keycloak.profile.feature.upload_script=enabled"
+      - KEYCLOAK_ADMIN=harmony # Change the username!
+      - KEYCLOAK_ADMIN_PASSWORD=harmony # Change the password!
+      # - KC_HOSTNAME=harmony.dev # Set the hostname here
+      - KC_HOSTNAME=localhost
+      #- KC_HOSTNAME_ADMIN_URL=https://alfred.harmony.dev
+      - KC_PROXY=none
+      # - KC_HTTPS_CERTIFICATE_FILE=/etc/x509/https/tls.crt
+      # - KC_HTTPS_CERTIFICATE_KEY_FILE=/etc/x509/https/tls.key
+      - KC_VENDOR=POSTGRES
+      - DB_ADDR=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=keycloak_harmony
+      - DB_USERNAME=harmony
+      - DB_PASSWORD=harmony
+    command:
+      - start-dev
+    depends_on:
+      - postgres
+networks:
+  postgres:
+    driver: bridge
+volumes:
+  postgres:
