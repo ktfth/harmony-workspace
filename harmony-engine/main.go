@@ -13,6 +13,7 @@ import (
 	"github.com/ServiceWeaver/weaver"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var validate *validator.Validate
@@ -41,6 +42,9 @@ func serve(ctx context.Context, app *app) error {
 	return http.Serve(app.bin, nil)
 }
 
+// handleBin handles the HTTP requests for the "/bin" endpoint.
+// It takes a context, app instance, and returns an http.HandlerFunc.
+// The returned handler function processes the incoming requests and performs the necessary actions based on the request method and sub-method.
 func handleBin(ctx context.Context, app *app) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var logger = app.Logger(ctx)
@@ -49,14 +53,19 @@ func handleBin(ctx context.Context, app *app) http.HandlerFunc {
 
 		var subMethod = strings.TrimPrefix(r.URL.Path, "/bin/")
 
+		var p Prompter = app.prompter.Get()
+
 		if subMethod == "auth" && r.Method == "POST" {
-			LoginHandler(w, r)
+			AuthHandler(ctx, app, p, w, r)
 			return
 		}
 
-		var p Prompter = app.prompter.Get()
-
 		if r.Method == "POST" {
+			if subMethod == "register" {
+				RegisterHandler(ctx, app, p, w, r)
+				return
+			}
+
 			verifyErr := verifyTokenTrigger(ctx, app, w, r)
 
 			if verifyErr != nil {
@@ -141,7 +150,58 @@ func verifyTokenTrigger(ctx context.Context, app *app, w http.ResponseWriter, r 
 	return nil
 }
 
-func LoginHandler(w http.ResponseWriter, r *http.Request) {
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+func RegisterHandler(ctx context.Context, app *app, p Prompter, w http.ResponseWriter, r *http.Request) {
+	var logger = app.Logger(ctx)
+
+	logger.Info("bin request is a POST")
+
+	var user = &User{}
+	if err := json.NewDecoder(r.Body).Decode(user); err != nil {
+		fmt.Fprintf(w, "%v", err, http.StatusBadRequest)
+		return
+	}
+
+	const fieldValidation = "required,min=3,max=255"
+
+	errsUsername := validate.Var(user.Username, fieldValidation)
+	errsPassword := validate.Var(user.Password, fieldValidation)
+
+	if errsUsername != nil {
+		fmt.Fprintf(w, "%v", errsUsername, http.StatusBadRequest)
+		return
+	}
+
+	if errsPassword != nil {
+		fmt.Fprintf(w, "%v", errsPassword, http.StatusBadRequest)
+		return
+	}
+
+	logger.Info("bin request is a POST with a user and validations")
+
+	var bin, err = p.Register(ctx, user)
+	if err != nil {
+		fmt.Fprintf(w, "%v", err, http.StatusInternalServerError)
+		return
+	}
+
+	logger.Info("bin request is a POST with a user and a bin")
+
+	var binResultInJson, _ = json.MarshalIndent(bin, "", "  ")
+	var binOut = string(binResultInJson)
+
+	logger.Info("bin request is a POST with a user and a bin and a json")
+
+	fmt.Fprintf(w, "%v", binOut)
+
+	return
+}
+
+func AuthHandler(ctx context.Context, app *app, p Prompter, w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		w.Header().Set("Content-Type", "application/json")
 
@@ -149,7 +209,15 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewDecoder(r.Body).Decode(&u)
 		fmt.Printf("The user request value %v", u)
 
-		if u.Username == "harmony" && u.Password == "harmony" {
+		registeredUser, registeredErr := p.Fetch(ctx, &u)
+
+		if registeredErr != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprint(w, "Invalid credentials")
+			return
+		}
+
+		if u.Username == registeredUser.Username && CheckPasswordHash(u.Password, registeredUser.Password) {
 			tokenString, err := createToken(u.Username)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
@@ -176,7 +244,9 @@ func CreatePrompt(ctx context.Context, app *app, p Prompter, w http.ResponseWrit
 		return
 	}
 
-	errsPromptText := validate.Var(prompt.Text, "required,min=3,max=255")
+	const fieldValidation = "required,min=3,max=255"
+
+	errsPromptText := validate.Var(prompt.Text, fieldValidation)
 
 	if errsPromptText != nil {
 		fmt.Fprintf(w, "%v", errsPromptText, http.StatusBadRequest)

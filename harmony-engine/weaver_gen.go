@@ -37,10 +37,10 @@ func init() {
 		Iface: reflect.TypeOf((*Prompter)(nil)).Elem(),
 		Impl:  reflect.TypeOf(prompter{}),
 		LocalStubFn: func(impl any, caller string, tracer trace.Tracer) any {
-			return prompter_local_stub{impl: impl.(Prompter), tracer: tracer, binMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Bin", Remote: false}), retrieveMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Retrieve", Remote: false})}
+			return prompter_local_stub{impl: impl.(Prompter), tracer: tracer, binMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Bin", Remote: false}), fetchMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Fetch", Remote: false}), registerMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Register", Remote: false}), retrieveMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Retrieve", Remote: false})}
 		},
 		ClientStubFn: func(stub codegen.Stub, caller string) any {
-			return prompter_client_stub{stub: stub, binMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Bin", Remote: true}), retrieveMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Retrieve", Remote: true})}
+			return prompter_client_stub{stub: stub, binMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Bin", Remote: true}), fetchMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Fetch", Remote: true}), registerMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Register", Remote: true}), retrieveMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Retrieve", Remote: true})}
 		},
 		ServerStubFn: func(impl any, addLoad func(uint64, float64)) codegen.Server {
 			return prompter_server_stub{impl: impl.(Prompter), addLoad: addLoad}
@@ -74,6 +74,8 @@ type prompter_local_stub struct {
 	impl            Prompter
 	tracer          trace.Tracer
 	binMetrics      *codegen.MethodMetrics
+	fetchMetrics    *codegen.MethodMetrics
+	registerMetrics *codegen.MethodMetrics
 	retrieveMetrics *codegen.MethodMetrics
 }
 
@@ -98,6 +100,46 @@ func (s prompter_local_stub) Bin(ctx context.Context, a0 *Prompt) (r0 int64, err
 	}
 
 	return s.impl.Bin(ctx, a0)
+}
+
+func (s prompter_local_stub) Fetch(ctx context.Context, a0 *User) (r0 *User, err error) {
+	// Update metrics.
+	begin := s.fetchMetrics.Begin()
+	defer func() { s.fetchMetrics.End(begin, err != nil, 0, 0) }()
+	span := trace.SpanFromContext(ctx)
+	if span.SpanContext().IsValid() {
+		// Create a child span for this method.
+		ctx, span = s.tracer.Start(ctx, "main.Prompter.Fetch", trace.WithSpanKind(trace.SpanKindInternal))
+		defer func() {
+			if err != nil {
+				span.RecordError(err)
+				span.SetStatus(codes.Error, err.Error())
+			}
+			span.End()
+		}()
+	}
+
+	return s.impl.Fetch(ctx, a0)
+}
+
+func (s prompter_local_stub) Register(ctx context.Context, a0 *User) (r0 int64, err error) {
+	// Update metrics.
+	begin := s.registerMetrics.Begin()
+	defer func() { s.registerMetrics.End(begin, err != nil, 0, 0) }()
+	span := trace.SpanFromContext(ctx)
+	if span.SpanContext().IsValid() {
+		// Create a child span for this method.
+		ctx, span = s.tracer.Start(ctx, "main.Prompter.Register", trace.WithSpanKind(trace.SpanKindInternal))
+		defer func() {
+			if err != nil {
+				span.RecordError(err)
+				span.SetStatus(codes.Error, err.Error())
+			}
+			span.End()
+		}()
+	}
+
+	return s.impl.Register(ctx, a0)
 }
 
 func (s prompter_local_stub) Retrieve(ctx context.Context, a0 *Prompt) (r0 *Prompt, err error) {
@@ -132,6 +174,8 @@ var _ weaver.Main = (*main_client_stub)(nil)
 type prompter_client_stub struct {
 	stub            codegen.Stub
 	binMetrics      *codegen.MethodMetrics
+	fetchMetrics    *codegen.MethodMetrics
+	registerMetrics *codegen.MethodMetrics
 	retrieveMetrics *codegen.MethodMetrics
 }
 
@@ -194,6 +238,118 @@ func (s prompter_client_stub) Bin(ctx context.Context, a0 *Prompt) (r0 int64, er
 	return
 }
 
+func (s prompter_client_stub) Fetch(ctx context.Context, a0 *User) (r0 *User, err error) {
+	// Update metrics.
+	var requestBytes, replyBytes int
+	begin := s.fetchMetrics.Begin()
+	defer func() { s.fetchMetrics.End(begin, err != nil, requestBytes, replyBytes) }()
+
+	span := trace.SpanFromContext(ctx)
+	if span.SpanContext().IsValid() {
+		// Create a child span for this method.
+		ctx, span = s.stub.Tracer().Start(ctx, "main.Prompter.Fetch", trace.WithSpanKind(trace.SpanKindClient))
+	}
+
+	defer func() {
+		// Catch and return any panics detected during encoding/decoding/rpc.
+		if err == nil {
+			err = codegen.CatchPanics(recover())
+			if err != nil {
+				err = errors.Join(weaver.RemoteCallError, err)
+			}
+		}
+
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.End()
+
+	}()
+
+	// Preallocate a buffer of the right size.
+	size := 0
+	size += serviceweaver_size_ptr_User_29f1f4c9(a0)
+	enc := codegen.NewEncoder()
+	enc.Reset(size)
+
+	// Encode arguments.
+	serviceweaver_enc_ptr_User_29f1f4c9(enc, a0)
+	var shardKey uint64
+
+	// Call the remote method.
+	requestBytes = len(enc.Data())
+	var results []byte
+	results, err = s.stub.Run(ctx, 1, enc.Data(), shardKey)
+	replyBytes = len(results)
+	if err != nil {
+		err = errors.Join(weaver.RemoteCallError, err)
+		return
+	}
+
+	// Decode the results.
+	dec := codegen.NewDecoder(results)
+	r0 = serviceweaver_dec_ptr_User_29f1f4c9(dec)
+	err = dec.Error()
+	return
+}
+
+func (s prompter_client_stub) Register(ctx context.Context, a0 *User) (r0 int64, err error) {
+	// Update metrics.
+	var requestBytes, replyBytes int
+	begin := s.registerMetrics.Begin()
+	defer func() { s.registerMetrics.End(begin, err != nil, requestBytes, replyBytes) }()
+
+	span := trace.SpanFromContext(ctx)
+	if span.SpanContext().IsValid() {
+		// Create a child span for this method.
+		ctx, span = s.stub.Tracer().Start(ctx, "main.Prompter.Register", trace.WithSpanKind(trace.SpanKindClient))
+	}
+
+	defer func() {
+		// Catch and return any panics detected during encoding/decoding/rpc.
+		if err == nil {
+			err = codegen.CatchPanics(recover())
+			if err != nil {
+				err = errors.Join(weaver.RemoteCallError, err)
+			}
+		}
+
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.End()
+
+	}()
+
+	// Preallocate a buffer of the right size.
+	size := 0
+	size += serviceweaver_size_ptr_User_29f1f4c9(a0)
+	enc := codegen.NewEncoder()
+	enc.Reset(size)
+
+	// Encode arguments.
+	serviceweaver_enc_ptr_User_29f1f4c9(enc, a0)
+	var shardKey uint64
+
+	// Call the remote method.
+	requestBytes = len(enc.Data())
+	var results []byte
+	results, err = s.stub.Run(ctx, 2, enc.Data(), shardKey)
+	replyBytes = len(results)
+	if err != nil {
+		err = errors.Join(weaver.RemoteCallError, err)
+		return
+	}
+
+	// Decode the results.
+	dec := codegen.NewDecoder(results)
+	r0 = dec.Int64()
+	err = dec.Error()
+	return
+}
+
 func (s prompter_client_stub) Retrieve(ctx context.Context, a0 *Prompt) (r0 *Prompt, err error) {
 	// Update metrics.
 	var requestBytes, replyBytes int
@@ -236,7 +392,7 @@ func (s prompter_client_stub) Retrieve(ctx context.Context, a0 *Prompt) (r0 *Pro
 	// Call the remote method.
 	requestBytes = len(enc.Data())
 	var results []byte
-	results, err = s.stub.Run(ctx, 1, enc.Data(), shardKey)
+	results, err = s.stub.Run(ctx, 3, enc.Data(), shardKey)
 	replyBytes = len(results)
 	if err != nil {
 		err = errors.Join(weaver.RemoteCallError, err)
@@ -304,6 +460,10 @@ func (s prompter_server_stub) GetStubFn(method string) func(ctx context.Context,
 	switch method {
 	case "Bin":
 		return s.bin
+	case "Fetch":
+		return s.fetch
+	case "Register":
+		return s.register
 	case "Retrieve":
 		return s.retrieve
 	default:
@@ -328,6 +488,56 @@ func (s prompter_server_stub) bin(ctx context.Context, args []byte) (res []byte,
 	// user code: fix this.
 	// Call the local method.
 	r0, appErr := s.impl.Bin(ctx, a0)
+
+	// Encode the results.
+	enc := codegen.NewEncoder()
+	enc.Int64(r0)
+	enc.Error(appErr)
+	return enc.Data(), nil
+}
+
+func (s prompter_server_stub) fetch(ctx context.Context, args []byte) (res []byte, err error) {
+	// Catch and return any panics detected during encoding/decoding/rpc.
+	defer func() {
+		if err == nil {
+			err = codegen.CatchPanics(recover())
+		}
+	}()
+
+	// Decode arguments.
+	dec := codegen.NewDecoder(args)
+	var a0 *User
+	a0 = serviceweaver_dec_ptr_User_29f1f4c9(dec)
+
+	// TODO(rgrandl): The deferred function above will recover from panics in the
+	// user code: fix this.
+	// Call the local method.
+	r0, appErr := s.impl.Fetch(ctx, a0)
+
+	// Encode the results.
+	enc := codegen.NewEncoder()
+	serviceweaver_enc_ptr_User_29f1f4c9(enc, r0)
+	enc.Error(appErr)
+	return enc.Data(), nil
+}
+
+func (s prompter_server_stub) register(ctx context.Context, args []byte) (res []byte, err error) {
+	// Catch and return any panics detected during encoding/decoding/rpc.
+	defer func() {
+		if err == nil {
+			err = codegen.CatchPanics(recover())
+		}
+	}()
+
+	// Decode arguments.
+	dec := codegen.NewDecoder(args)
+	var a0 *User
+	a0 = serviceweaver_dec_ptr_User_29f1f4c9(dec)
+
+	// TODO(rgrandl): The deferred function above will recover from panics in the
+	// user code: fix this.
+	// Call the local method.
+	r0, appErr := s.impl.Register(ctx, a0)
 
 	// Encode the results.
 	enc := codegen.NewEncoder()
@@ -382,6 +592,16 @@ func (s prompter_reflect_stub) Bin(ctx context.Context, a0 *Prompt) (r0 int64, e
 	return
 }
 
+func (s prompter_reflect_stub) Fetch(ctx context.Context, a0 *User) (r0 *User, err error) {
+	err = s.caller("Fetch", ctx, []any{a0}, []any{&r0})
+	return
+}
+
+func (s prompter_reflect_stub) Register(ctx context.Context, a0 *User) (r0 int64, err error) {
+	err = s.caller("Register", ctx, []any{a0}, []any{&r0})
+	return
+}
+
 func (s prompter_reflect_stub) Retrieve(ctx context.Context, a0 *Prompt) (r0 *Prompt, err error) {
 	err = s.caller("Retrieve", ctx, []any{a0}, []any{&r0})
 	return
@@ -421,6 +641,35 @@ func (x *Prompt) WeaverUnmarshal(dec *codegen.Decoder) {
 	x.Tags = dec.String()
 }
 
+var _ codegen.AutoMarshal = (*User)(nil)
+
+type __is_User[T ~struct {
+	weaver.AutoMarshal
+	Id       int    "json:\"id\""
+	Username string "json:\"username\""
+	Password string "json:\"password\""
+}] struct{}
+
+var _ __is_User[User]
+
+func (x *User) WeaverMarshal(enc *codegen.Encoder) {
+	if x == nil {
+		panic(fmt.Errorf("User.WeaverMarshal: nil receiver"))
+	}
+	enc.Int(x.Id)
+	enc.String(x.Username)
+	enc.String(x.Password)
+}
+
+func (x *User) WeaverUnmarshal(dec *codegen.Decoder) {
+	if x == nil {
+		panic(fmt.Errorf("User.WeaverUnmarshal: nil receiver"))
+	}
+	x.Id = dec.Int()
+	x.Username = dec.String()
+	x.Password = dec.String()
+}
+
 // Encoding/decoding implementations.
 
 func serviceweaver_enc_ptr_Prompt_085838cb(enc *codegen.Encoder, arg *Prompt) {
@@ -441,6 +690,24 @@ func serviceweaver_dec_ptr_Prompt_085838cb(dec *codegen.Decoder) *Prompt {
 	return &res
 }
 
+func serviceweaver_enc_ptr_User_29f1f4c9(enc *codegen.Encoder, arg *User) {
+	if arg == nil {
+		enc.Bool(false)
+	} else {
+		enc.Bool(true)
+		(*arg).WeaverMarshal(enc)
+	}
+}
+
+func serviceweaver_dec_ptr_User_29f1f4c9(dec *codegen.Decoder) *User {
+	if !dec.Bool() {
+		return nil
+	}
+	var res User
+	(&res).WeaverUnmarshal(dec)
+	return &res
+}
+
 // Size implementations.
 
 // serviceweaver_size_ptr_Prompt_085838cb returns the size (in bytes) of the serialization
@@ -453,6 +720,16 @@ func serviceweaver_size_ptr_Prompt_085838cb(x *Prompt) int {
 	}
 }
 
+// serviceweaver_size_ptr_User_29f1f4c9 returns the size (in bytes) of the serialization
+// of the provided type.
+func serviceweaver_size_ptr_User_29f1f4c9(x *User) int {
+	if x == nil {
+		return 1
+	} else {
+		return 1 + serviceweaver_size_User_f98d3709(&*x)
+	}
+}
+
 // serviceweaver_size_Prompt_575b9be2 returns the size (in bytes) of the serialization
 // of the provided type.
 func serviceweaver_size_Prompt_575b9be2(x *Prompt) int {
@@ -462,5 +739,16 @@ func serviceweaver_size_Prompt_575b9be2(x *Prompt) int {
 	size += (4 + len(x.Text))
 	size += (4 + len(x.Model))
 	size += (4 + len(x.Tags))
+	return size
+}
+
+// serviceweaver_size_User_f98d3709 returns the size (in bytes) of the serialization
+// of the provided type.
+func serviceweaver_size_User_f98d3709(x *User) int {
+	size := 0
+	size += 0
+	size += 8
+	size += (4 + len(x.Username))
+	size += (4 + len(x.Password))
 	return size
 }
