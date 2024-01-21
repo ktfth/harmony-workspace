@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,6 +16,9 @@ import (
 var validate *validator.Validate
 
 var secretKey []byte
+
+//go:embed index.html
+var indexHtml string
 
 func main() {
 	dotEnvErr := godotenv.Load()
@@ -39,6 +43,8 @@ type app struct {
 
 func serve(ctx context.Context, app *app) error {
 	fmt.Printf("bin listener available on %v\n", app.bin)
+
+	http.HandleFunc("/", handleIndex(ctx, app))
 
 	http.HandleFunc("/bin/", handleBin(ctx, app))
 

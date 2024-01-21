@@ -9,6 +9,17 @@ import (
 	"strings"
 )
 
+func handleIndex(ctx context.Context, app *app) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var logger = app.Logger(ctx)
+		logger.Info("index request received")
+
+		if _, err := fmt.Fprint(w, indexHtml); err != nil {
+			logger.Error("error writing index.html to response writer", "err", err)
+		}
+	}
+}
+
 // handleBin handles the "/bin" endpoint and its sub-methods.
 // It receives a bin request and delegates the handling to the appropriate sub-method based on the HTTP method.
 // The sub-method is extracted from the URL path.
