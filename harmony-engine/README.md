@@ -15,6 +15,12 @@ cd harmony-engine
 Start the drums...
 
 ```sh
+$env:SERVICEWEAVER_CONFIG=".\config.toml"
+```
+
+When the config files is settled, you can do other things.
+
+```sh
 just weaver_generate update run
 ```
 

@@ -82,7 +82,7 @@ type prompter_local_stub struct {
 // Check that prompter_local_stub implements the Prompter interface.
 var _ Prompter = (*prompter_local_stub)(nil)
 
-func (s prompter_local_stub) Bin(ctx context.Context, a0 *Prompt) (r0 int64, err error) {
+func (s prompter_local_stub) Bin(ctx context.Context, a0 *Prompt) (r0 *IPromptResult, err error) {
 	// Update metrics.
 	begin := s.binMetrics.Begin()
 	defer func() { s.binMetrics.End(begin, err != nil, 0, 0) }()
@@ -122,7 +122,7 @@ func (s prompter_local_stub) Fetch(ctx context.Context, a0 *User) (r0 *User, err
 	return s.impl.Fetch(ctx, a0)
 }
 
-func (s prompter_local_stub) Register(ctx context.Context, a0 *User) (r0 int64, err error) {
+func (s prompter_local_stub) Register(ctx context.Context, a0 *User) (r0 *IUserResult, err error) {
 	// Update metrics.
 	begin := s.registerMetrics.Begin()
 	defer func() { s.registerMetrics.End(begin, err != nil, 0, 0) }()
@@ -182,7 +182,7 @@ type prompter_client_stub struct {
 // Check that prompter_client_stub implements the Prompter interface.
 var _ Prompter = (*prompter_client_stub)(nil)
 
-func (s prompter_client_stub) Bin(ctx context.Context, a0 *Prompt) (r0 int64, err error) {
+func (s prompter_client_stub) Bin(ctx context.Context, a0 *Prompt) (r0 *IPromptResult, err error) {
 	// Update metrics.
 	var requestBytes, replyBytes int
 	begin := s.binMetrics.Begin()
@@ -233,7 +233,7 @@ func (s prompter_client_stub) Bin(ctx context.Context, a0 *Prompt) (r0 int64, er
 
 	// Decode the results.
 	dec := codegen.NewDecoder(results)
-	r0 = dec.Int64()
+	r0 = serviceweaver_dec_ptr_IPromptResult_c276f7f7(dec)
 	err = dec.Error()
 	return
 }
@@ -294,7 +294,7 @@ func (s prompter_client_stub) Fetch(ctx context.Context, a0 *User) (r0 *User, er
 	return
 }
 
-func (s prompter_client_stub) Register(ctx context.Context, a0 *User) (r0 int64, err error) {
+func (s prompter_client_stub) Register(ctx context.Context, a0 *User) (r0 *IUserResult, err error) {
 	// Update metrics.
 	var requestBytes, replyBytes int
 	begin := s.registerMetrics.Begin()
@@ -345,7 +345,7 @@ func (s prompter_client_stub) Register(ctx context.Context, a0 *User) (r0 int64,
 
 	// Decode the results.
 	dec := codegen.NewDecoder(results)
-	r0 = dec.Int64()
+	r0 = serviceweaver_dec_ptr_IUserResult_a051ac57(dec)
 	err = dec.Error()
 	return
 }
@@ -491,7 +491,7 @@ func (s prompter_server_stub) bin(ctx context.Context, args []byte) (res []byte,
 
 	// Encode the results.
 	enc := codegen.NewEncoder()
-	enc.Int64(r0)
+	serviceweaver_enc_ptr_IPromptResult_c276f7f7(enc, r0)
 	enc.Error(appErr)
 	return enc.Data(), nil
 }
@@ -541,7 +541,7 @@ func (s prompter_server_stub) register(ctx context.Context, args []byte) (res []
 
 	// Encode the results.
 	enc := codegen.NewEncoder()
-	enc.Int64(r0)
+	serviceweaver_enc_ptr_IUserResult_a051ac57(enc, r0)
 	enc.Error(appErr)
 	return enc.Data(), nil
 }
@@ -587,7 +587,7 @@ type prompter_reflect_stub struct {
 // Check that prompter_reflect_stub implements the Prompter interface.
 var _ Prompter = (*prompter_reflect_stub)(nil)
 
-func (s prompter_reflect_stub) Bin(ctx context.Context, a0 *Prompt) (r0 int64, err error) {
+func (s prompter_reflect_stub) Bin(ctx context.Context, a0 *Prompt) (r0 *IPromptResult, err error) {
 	err = s.caller("Bin", ctx, []any{a0}, []any{&r0})
 	return
 }
@@ -597,7 +597,7 @@ func (s prompter_reflect_stub) Fetch(ctx context.Context, a0 *User) (r0 *User, e
 	return
 }
 
-func (s prompter_reflect_stub) Register(ctx context.Context, a0 *User) (r0 int64, err error) {
+func (s prompter_reflect_stub) Register(ctx context.Context, a0 *User) (r0 *IUserResult, err error) {
 	err = s.caller("Register", ctx, []any{a0}, []any{&r0})
 	return
 }
@@ -608,6 +608,52 @@ func (s prompter_reflect_stub) Retrieve(ctx context.Context, a0 *Prompt) (r0 *Pr
 }
 
 // AutoMarshal implementations.
+
+var _ codegen.AutoMarshal = (*IPromptResult)(nil)
+
+type __is_IPromptResult[T ~struct {
+	weaver.AutoMarshal
+	Id int64 "json:\"id\""
+}] struct{}
+
+var _ __is_IPromptResult[IPromptResult]
+
+func (x *IPromptResult) WeaverMarshal(enc *codegen.Encoder) {
+	if x == nil {
+		panic(fmt.Errorf("IPromptResult.WeaverMarshal: nil receiver"))
+	}
+	enc.Int64(x.Id)
+}
+
+func (x *IPromptResult) WeaverUnmarshal(dec *codegen.Decoder) {
+	if x == nil {
+		panic(fmt.Errorf("IPromptResult.WeaverUnmarshal: nil receiver"))
+	}
+	x.Id = dec.Int64()
+}
+
+var _ codegen.AutoMarshal = (*IUserResult)(nil)
+
+type __is_IUserResult[T ~struct {
+	weaver.AutoMarshal
+	Id int64 "json:\"id\""
+}] struct{}
+
+var _ __is_IUserResult[IUserResult]
+
+func (x *IUserResult) WeaverMarshal(enc *codegen.Encoder) {
+	if x == nil {
+		panic(fmt.Errorf("IUserResult.WeaverMarshal: nil receiver"))
+	}
+	enc.Int64(x.Id)
+}
+
+func (x *IUserResult) WeaverUnmarshal(dec *codegen.Decoder) {
+	if x == nil {
+		panic(fmt.Errorf("IUserResult.WeaverUnmarshal: nil receiver"))
+	}
+	x.Id = dec.Int64()
+}
 
 var _ codegen.AutoMarshal = (*Prompt)(nil)
 
@@ -690,6 +736,24 @@ func serviceweaver_dec_ptr_Prompt_085838cb(dec *codegen.Decoder) *Prompt {
 	return &res
 }
 
+func serviceweaver_enc_ptr_IPromptResult_c276f7f7(enc *codegen.Encoder, arg *IPromptResult) {
+	if arg == nil {
+		enc.Bool(false)
+	} else {
+		enc.Bool(true)
+		(*arg).WeaverMarshal(enc)
+	}
+}
+
+func serviceweaver_dec_ptr_IPromptResult_c276f7f7(dec *codegen.Decoder) *IPromptResult {
+	if !dec.Bool() {
+		return nil
+	}
+	var res IPromptResult
+	(&res).WeaverUnmarshal(dec)
+	return &res
+}
+
 func serviceweaver_enc_ptr_User_29f1f4c9(enc *codegen.Encoder, arg *User) {
 	if arg == nil {
 		enc.Bool(false)
@@ -704,6 +768,24 @@ func serviceweaver_dec_ptr_User_29f1f4c9(dec *codegen.Decoder) *User {
 		return nil
 	}
 	var res User
+	(&res).WeaverUnmarshal(dec)
+	return &res
+}
+
+func serviceweaver_enc_ptr_IUserResult_a051ac57(enc *codegen.Encoder, arg *IUserResult) {
+	if arg == nil {
+		enc.Bool(false)
+	} else {
+		enc.Bool(true)
+		(*arg).WeaverMarshal(enc)
+	}
+}
+
+func serviceweaver_dec_ptr_IUserResult_a051ac57(dec *codegen.Decoder) *IUserResult {
+	if !dec.Bool() {
+		return nil
+	}
+	var res IUserResult
 	(&res).WeaverUnmarshal(dec)
 	return &res
 }

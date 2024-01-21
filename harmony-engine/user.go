@@ -10,3 +10,8 @@ type User struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
+
+type IUserResult struct {
+	weaver.AutoMarshal
+	Id int64 `json:"id"`
+}
