@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/ServiceWeaver/weaver"
 	"github.com/go-playground/validator/v10"
@@ -12,7 +13,7 @@ import (
 
 var validate *validator.Validate
 
-var secretKey = []byte("super-secret")
+var secretKey = []byte(os.Getenv("SECRET_KEY"))
 
 func main() {
 	validate = validator.New(validator.WithRequiredStructEnabled())

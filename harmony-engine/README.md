@@ -15,6 +15,7 @@ cd harmony-engine
 Start the drums...
 
 ```sh
+$env:SECRET_KEY="super-secret"
 $env:SERVICEWEAVER_CONFIG=".\config.toml"
 ```
 
