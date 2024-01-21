@@ -42,52 +42,61 @@ func serve(ctx context.Context, app *app) error {
 	return http.Serve(app.bin, nil)
 }
 
-// handleBin handles the HTTP requests for the "/bin" endpoint.
-// It takes a context, app instance, and returns an http.HandlerFunc.
-// The returned handler function processes the incoming requests and performs the necessary actions based on the request method and sub-method.
 func handleBin(ctx context.Context, app *app) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var logger = app.Logger(ctx)
-
 		logger.Info("bin request received")
 
 		var subMethod = strings.TrimPrefix(r.URL.Path, "/bin/")
-
 		var p Prompter = app.prompter.Get()
 
-		if subMethod == "auth" && r.Method == "POST" {
-			AuthHandler(ctx, app, p, w, r)
-			return
-		}
-
-		if r.Method == "POST" {
-			if subMethod == "register" {
-				RegisterHandler(ctx, app, p, w, r)
-				return
-			}
-
-			verifyErr := verifyTokenTrigger(ctx, app, w, r)
-
-			if verifyErr != nil {
-				fmt.Fprintf(w, "%v", verifyErr, http.StatusUnauthorized)
-			} else {
-				CreatePrompt(ctx, app, p, w, r)
-			}
-		} else if r.Method == "GET" {
-			verifyErr := verifyTokenTrigger(ctx, app, w, r)
-
-			if verifyErr != nil {
-				fmt.Fprintf(w, "%v", verifyErr, http.StatusUnauthorized)
-			} else {
-				RetrievePrompt(ctx, app, p, w, r)
-			}
-		} else {
+		switch r.Method {
+		case "POST":
+			handlePost(ctx, app, p, w, r, subMethod)
+		case "GET":
+			handleGet(ctx, app, p, w, r)
+		default:
 			logger.Warn("bin request is not a POST or a GET")
-
-			fmt.Fprintf(w, "%v", "Method not allowed", http.StatusMethodNotAllowed)
-
-			return
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
+	}
+}
+
+func handlePost(ctx context.Context, app *app, p Prompter, w http.ResponseWriter, r *http.Request, subMethod string) {
+	if subMethod == "auth" {
+		AuthHandler(ctx, app, p, w, r)
+		return
+	}
+
+	if subMethod == "register" {
+		RegisterHandler(ctx, app, p, w, r)
+		return
+	}
+
+	verifyAndCreatePrompt(ctx, app, p, w, r)
+}
+
+func handleGet(ctx context.Context, app *app, p Prompter, w http.ResponseWriter, r *http.Request) {
+	verifyAndRetrievePrompt(ctx, app, p, w, r)
+}
+
+func verifyAndCreatePrompt(ctx context.Context, app *app, p Prompter, w http.ResponseWriter, r *http.Request) {
+	verifyErr := verifyTokenTrigger(ctx, app, w, r)
+
+	if verifyErr != nil {
+		http.Error(w, verifyErr.Error(), http.StatusUnauthorized)
+	} else {
+		CreatePrompt(ctx, app, p, w, r)
+	}
+}
+
+func verifyAndRetrievePrompt(ctx context.Context, app *app, p Prompter, w http.ResponseWriter, r *http.Request) {
+	verifyErr := verifyTokenTrigger(ctx, app, w, r)
+
+	if verifyErr != nil {
+		http.Error(w, verifyErr.Error(), http.StatusUnauthorized)
+	} else {
+		RetrievePrompt(ctx, app, p, w, r)
 	}
 }
 
@@ -162,7 +171,7 @@ func RegisterHandler(ctx context.Context, app *app, p Prompter, w http.ResponseW
 
 	var user = &User{}
 	if err := json.NewDecoder(r.Body).Decode(user); err != nil {
-		fmt.Fprintf(w, "%v", err, http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -172,12 +181,12 @@ func RegisterHandler(ctx context.Context, app *app, p Prompter, w http.ResponseW
 	errsPassword := validate.Var(user.Password, fieldValidation)
 
 	if errsUsername != nil {
-		fmt.Fprintf(w, "%v", errsUsername, http.StatusBadRequest)
+		http.Error(w, errsUsername.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if errsPassword != nil {
-		fmt.Fprintf(w, "%v", errsPassword, http.StatusBadRequest)
+		http.Error(w, errsPassword.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -185,7 +194,7 @@ func RegisterHandler(ctx context.Context, app *app, p Prompter, w http.ResponseW
 
 	var bin, err = p.Register(ctx, user)
 	if err != nil {
-		fmt.Fprintf(w, "%v", err, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -240,7 +249,7 @@ func CreatePrompt(ctx context.Context, app *app, p Prompter, w http.ResponseWrit
 
 	var prompt = &Prompt{}
 	if err := json.NewDecoder(r.Body).Decode(prompt); err != nil {
-		fmt.Fprintf(w, "%v", err, http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -249,7 +258,7 @@ func CreatePrompt(ctx context.Context, app *app, p Prompter, w http.ResponseWrit
 	errsPromptText := validate.Var(prompt.Text, fieldValidation)
 
 	if errsPromptText != nil {
-		fmt.Fprintf(w, "%v", errsPromptText, http.StatusBadRequest)
+		http.Error(w, errsPromptText.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -257,7 +266,7 @@ func CreatePrompt(ctx context.Context, app *app, p Prompter, w http.ResponseWrit
 
 	var bin, err = p.Bin(ctx, prompt)
 	if err != nil {
-		fmt.Fprintf(w, "%v", err, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -283,7 +292,7 @@ func RetrievePrompt(ctx context.Context, app *app, p Prompter, w http.ResponseWr
 	var idInt, errId = strconv.Atoi(id)
 
 	if errId != nil {
-		fmt.Fprintf(w, "%v", errId, http.StatusBadRequest)
+		http.Error(w, errId.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -294,7 +303,7 @@ func RetrievePrompt(ctx context.Context, app *app, p Prompter, w http.ResponseWr
 	}
 	var promptResult, errPrompt = p.Retrieve(ctx, prompt)
 	if errPrompt != nil {
-		fmt.Fprintf(w, "%v", errPrompt, http.StatusInternalServerError)
+		http.Error(w, errPrompt.Error(), http.StatusInternalServerError)
 		return
 	}
 

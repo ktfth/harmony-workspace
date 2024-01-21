@@ -10,7 +10,5 @@ build:
 run:
   go run .
 
-test: update weaver_generate build
+test:
   go test .
-
-build_and_run: update weaver_generate build run
