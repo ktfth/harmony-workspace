@@ -9,14 +9,22 @@ import (
 
 	"github.com/ServiceWeaver/weaver"
 	"github.com/go-playground/validator/v10"
+	"github.com/joho/godotenv"
 )
 
 var validate *validator.Validate
 
-var secretKey = []byte(os.Getenv("SECRET_KEY"))
+var secretKey []byte
 
 func main() {
+	dotEnvErr := godotenv.Load()
+
+	if dotEnvErr != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	validate = validator.New(validator.WithRequiredStructEnabled())
+	secretKey = []byte(os.Getenv("SECRET_KEY"))
 
 	if err := weaver.Run(context.Background(), serve); err != nil {
 		log.Fatal(err)
