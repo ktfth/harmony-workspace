@@ -13,12 +13,122 @@
     <title>Harmony</title>
 </head>
 <body>
-    <main class="w-1/2 mx-auto container text-center">
+    <main x-data="{ token: '', isActionRegister: false }" class="w-1/2 mx-auto container text-center">
         <header class="pt-6">
             <h1 class="text-2xl">Harmony</h1>
         </header>
 
-        <section class="pt-6">
+        <section x-show="token === '' && isActionRegister === true" class="pt-6">
+            <form id="registerForm" x-data="{
+                credentials: {
+                    username: '',
+                    password: '',
+                },
+
+                async submitRegister() {
+                    const {
+                        username,
+                        password
+                    } = this.credentials;
+
+                    try {
+                        const response = await fetch('/bin/register', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                username,
+                                password,
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.id) {
+                            this.isActionRegister = false;
+                            alert('Registered!');
+                        } else {
+                            alert('Something wrong with registering process... try again!');
+                        }
+                    } catch (error) {
+                        alert('Something went wrong on the backstage!');
+                        console.error(error);
+                    }
+                }
+            }" class="p-3 rounded-lg border border-solid zinc-300">
+                <div class="mb-4">
+                    <label for="credentials" class="block text-gray-700 text-sm font-bold mb-2">Enter your credentials:</label>
+                    <input type="text" name="username" x-model="credentials.username" class="shadow appearance-none border rounded w-full mb-3 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Username" />
+                    <input type="password" name="password" x-model="credentials.password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Password" />
+                </div>
+
+                <button type="button" @click="submitRegister()" class="bg-[#192f5b] hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Register
+                </button>
+
+                <button type="button" @click="isActionRegister = false" class="bg-[#0F1C2E] hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Go Back to Login
+                </button>
+            </form>
+        </section>
+
+        <section x-show="token === '' && isActionRegister === false" class="pt-6">
+            <form id="authForm" x-data="{
+                credentials: {
+                    username: '',
+                    password: '',
+                },
+
+                async submitAuth() {
+                    const {
+                        username,
+                        password
+                    } = this.credentials;
+
+                    try {
+                        const response = await fetch('/bin/auth', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                username,
+                                password,
+                            })
+                        });
+
+                        const data = await response.text();
+
+                        if (data) {
+                            this.token = data;
+                            alert('Logged!');
+                        } else {
+                            alert('Wrong credentials!');
+                        }
+                    } catch (error) {
+                        alert('Something went wrong on the backstage!');
+                        console.error(error);
+                    }
+                }
+            }" class="p-3 rounded-lg border border-solid zinc-300">
+                <div class="mb-4">
+                    <label for="credentials" class="block text-gray-700 text-sm font-bold mb-2">Enter your credentials:</label>
+                    <input type="text" name="username" x-model="credentials.username" class="shadow appearance-none border rounded w-full mb-3 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Username" />
+                    <input type="password" name="password" x-model="credentials.password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Password" />
+                </div>
+
+                <button type="button" @click="submitAuth()" class="bg-[#192f5b] hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Login
+                </button>
+
+                <button type="button" @click="isActionRegister = true" class="bg-[#0F1C2E] hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Register
+                </button>
+            </form>
+        </section>
+
+        <section x-show="token != '' && isActionRegister === false" class="pt-6">
             <form id="promptForm" x-data="{
                 prompter: {
                     text: '',
@@ -39,7 +149,7 @@
                         const response = await fetch('/bin/', {
                             method: 'POST',
                             headers: {
-                                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MDU4ODgxMzYsInVzZXJuYW1lIjoiaGFybW9ueSJ9.ogZiWTxiaUDCVp3HSdYmccLHEwOVgW-rKt22a633rx0',
+                                'Authorization': 'Bearer ' + this.token,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
@@ -52,6 +162,10 @@
                         const data = await response.json();
 
                         if (data.id) {
+                            this.prompter.text = '';
+                            this.prompter.model = '';
+                            this.prompter.tags = '';
+
                             alert('Your prompt has been submitted!');
                         } else {
                             alert('Prompt exists!');
@@ -68,8 +182,8 @@
                     <input type="text" name="model" x-model="prompter.model" class="shadow appearance-none border rounded w-full mb-3 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Model" />
                     <input type="text" name="tags" x-model="prompter.tags" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tags" />
                 </div>
-                <button type="button" @click="submitBin()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                    Submit
+                <button type="button" @click="submitBin()" class="bg-[#192f5b] hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Save Prompt
                 </button>
             </form>
         </section>
