@@ -187,6 +187,46 @@
                 </button>
             </form>
         </section>
+
+        <hr />
+
+        <section x-show="token != '' && isActionRegister === false" class="pt-6">
+            <ul x-data="{
+                binListResult: {
+                    prompts: [],
+                },
+
+                async retrieveBins() {
+                    try {
+                        const response = await fetch('/bin/', {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': 'Bearer ' + this.token,
+                                'Content-Type': 'application/json'
+                            },
+                        });
+
+                        const data = await response.json();
+
+                        this.binListResult = data;
+                    } catch (error) {
+                        alert('Something went wrong on the backstage!');
+                        console.error(error);
+                    }
+                }
+            }" class="p-3 rounded-lg border border-solid zinc-300 mb-6">
+                <li class="">
+                    <button @click="retrieveBins()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Load Prompts
+                    </button>
+                </li>
+
+                <template x-for="prompt in binListResult.prompts" :key="prompt.id">
+                    <li class="mt-2 mb-3 p-2 rounded-lg bg-zinc-200">
+                        <p x-text="prompt.text"></p>
+                    </li>
+                </template>
+        </section>
     </main>
 </body>
 </html>

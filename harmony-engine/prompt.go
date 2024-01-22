@@ -16,3 +16,8 @@ type IPromptResult struct {
 	weaver.AutoMarshal
 	Id int64 `json:"id"`
 }
+
+type IPromptListResult struct {
+	weaver.AutoMarshal
+	Prompts []Prompt `json:"prompts"`
+}

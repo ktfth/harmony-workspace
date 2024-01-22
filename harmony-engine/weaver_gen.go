@@ -37,10 +37,10 @@ func init() {
 		Iface: reflect.TypeOf((*Prompter)(nil)).Elem(),
 		Impl:  reflect.TypeOf(prompter{}),
 		LocalStubFn: func(impl any, caller string, tracer trace.Tracer) any {
-			return prompter_local_stub{impl: impl.(Prompter), tracer: tracer, binMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Bin", Remote: false}), fetchMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Fetch", Remote: false}), registerMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Register", Remote: false}), retrieveMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Retrieve", Remote: false})}
+			return prompter_local_stub{impl: impl.(Prompter), tracer: tracer, binMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Bin", Remote: false}), fetchMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Fetch", Remote: false}), listMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "List", Remote: false}), registerMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Register", Remote: false}), retrieveMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Retrieve", Remote: false})}
 		},
 		ClientStubFn: func(stub codegen.Stub, caller string) any {
-			return prompter_client_stub{stub: stub, binMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Bin", Remote: true}), fetchMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Fetch", Remote: true}), registerMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Register", Remote: true}), retrieveMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Retrieve", Remote: true})}
+			return prompter_client_stub{stub: stub, binMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Bin", Remote: true}), fetchMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Fetch", Remote: true}), listMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "List", Remote: true}), registerMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Register", Remote: true}), retrieveMetrics: codegen.MethodMetricsFor(codegen.MethodLabels{Caller: caller, Component: "harmony-engine/Prompter", Method: "Retrieve", Remote: true})}
 		},
 		ServerStubFn: func(impl any, addLoad func(uint64, float64)) codegen.Server {
 			return prompter_server_stub{impl: impl.(Prompter), addLoad: addLoad}
@@ -75,6 +75,7 @@ type prompter_local_stub struct {
 	tracer          trace.Tracer
 	binMetrics      *codegen.MethodMetrics
 	fetchMetrics    *codegen.MethodMetrics
+	listMetrics     *codegen.MethodMetrics
 	registerMetrics *codegen.MethodMetrics
 	retrieveMetrics *codegen.MethodMetrics
 }
@@ -120,6 +121,26 @@ func (s prompter_local_stub) Fetch(ctx context.Context, a0 *User) (r0 *User, err
 	}
 
 	return s.impl.Fetch(ctx, a0)
+}
+
+func (s prompter_local_stub) List(ctx context.Context) (r0 *IPromptListResult, err error) {
+	// Update metrics.
+	begin := s.listMetrics.Begin()
+	defer func() { s.listMetrics.End(begin, err != nil, 0, 0) }()
+	span := trace.SpanFromContext(ctx)
+	if span.SpanContext().IsValid() {
+		// Create a child span for this method.
+		ctx, span = s.tracer.Start(ctx, "main.Prompter.List", trace.WithSpanKind(trace.SpanKindInternal))
+		defer func() {
+			if err != nil {
+				span.RecordError(err)
+				span.SetStatus(codes.Error, err.Error())
+			}
+			span.End()
+		}()
+	}
+
+	return s.impl.List(ctx)
 }
 
 func (s prompter_local_stub) Register(ctx context.Context, a0 *User) (r0 *IUserResult, err error) {
@@ -175,6 +196,7 @@ type prompter_client_stub struct {
 	stub            codegen.Stub
 	binMetrics      *codegen.MethodMetrics
 	fetchMetrics    *codegen.MethodMetrics
+	listMetrics     *codegen.MethodMetrics
 	registerMetrics *codegen.MethodMetrics
 	retrieveMetrics *codegen.MethodMetrics
 }
@@ -294,6 +316,53 @@ func (s prompter_client_stub) Fetch(ctx context.Context, a0 *User) (r0 *User, er
 	return
 }
 
+func (s prompter_client_stub) List(ctx context.Context) (r0 *IPromptListResult, err error) {
+	// Update metrics.
+	var requestBytes, replyBytes int
+	begin := s.listMetrics.Begin()
+	defer func() { s.listMetrics.End(begin, err != nil, requestBytes, replyBytes) }()
+
+	span := trace.SpanFromContext(ctx)
+	if span.SpanContext().IsValid() {
+		// Create a child span for this method.
+		ctx, span = s.stub.Tracer().Start(ctx, "main.Prompter.List", trace.WithSpanKind(trace.SpanKindClient))
+	}
+
+	defer func() {
+		// Catch and return any panics detected during encoding/decoding/rpc.
+		if err == nil {
+			err = codegen.CatchPanics(recover())
+			if err != nil {
+				err = errors.Join(weaver.RemoteCallError, err)
+			}
+		}
+
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.End()
+
+	}()
+
+	var shardKey uint64
+
+	// Call the remote method.
+	var results []byte
+	results, err = s.stub.Run(ctx, 2, nil, shardKey)
+	replyBytes = len(results)
+	if err != nil {
+		err = errors.Join(weaver.RemoteCallError, err)
+		return
+	}
+
+	// Decode the results.
+	dec := codegen.NewDecoder(results)
+	r0 = serviceweaver_dec_ptr_IPromptListResult_c31a6ab9(dec)
+	err = dec.Error()
+	return
+}
+
 func (s prompter_client_stub) Register(ctx context.Context, a0 *User) (r0 *IUserResult, err error) {
 	// Update metrics.
 	var requestBytes, replyBytes int
@@ -336,7 +405,7 @@ func (s prompter_client_stub) Register(ctx context.Context, a0 *User) (r0 *IUser
 	// Call the remote method.
 	requestBytes = len(enc.Data())
 	var results []byte
-	results, err = s.stub.Run(ctx, 2, enc.Data(), shardKey)
+	results, err = s.stub.Run(ctx, 3, enc.Data(), shardKey)
 	replyBytes = len(results)
 	if err != nil {
 		err = errors.Join(weaver.RemoteCallError, err)
@@ -392,7 +461,7 @@ func (s prompter_client_stub) Retrieve(ctx context.Context, a0 *Prompt) (r0 *Pro
 	// Call the remote method.
 	requestBytes = len(enc.Data())
 	var results []byte
-	results, err = s.stub.Run(ctx, 3, enc.Data(), shardKey)
+	results, err = s.stub.Run(ctx, 4, enc.Data(), shardKey)
 	replyBytes = len(results)
 	if err != nil {
 		err = errors.Join(weaver.RemoteCallError, err)
@@ -462,6 +531,8 @@ func (s prompter_server_stub) GetStubFn(method string) func(ctx context.Context,
 		return s.bin
 	case "Fetch":
 		return s.fetch
+	case "List":
+		return s.list
 	case "Register":
 		return s.register
 	case "Retrieve":
@@ -517,6 +588,26 @@ func (s prompter_server_stub) fetch(ctx context.Context, args []byte) (res []byt
 	// Encode the results.
 	enc := codegen.NewEncoder()
 	serviceweaver_enc_ptr_User_29f1f4c9(enc, r0)
+	enc.Error(appErr)
+	return enc.Data(), nil
+}
+
+func (s prompter_server_stub) list(ctx context.Context, args []byte) (res []byte, err error) {
+	// Catch and return any panics detected during encoding/decoding/rpc.
+	defer func() {
+		if err == nil {
+			err = codegen.CatchPanics(recover())
+		}
+	}()
+
+	// TODO(rgrandl): The deferred function above will recover from panics in the
+	// user code: fix this.
+	// Call the local method.
+	r0, appErr := s.impl.List(ctx)
+
+	// Encode the results.
+	enc := codegen.NewEncoder()
+	serviceweaver_enc_ptr_IPromptListResult_c31a6ab9(enc, r0)
 	enc.Error(appErr)
 	return enc.Data(), nil
 }
@@ -597,6 +688,11 @@ func (s prompter_reflect_stub) Fetch(ctx context.Context, a0 *User) (r0 *User, e
 	return
 }
 
+func (s prompter_reflect_stub) List(ctx context.Context) (r0 *IPromptListResult, err error) {
+	err = s.caller("List", ctx, []any{}, []any{&r0})
+	return
+}
+
 func (s prompter_reflect_stub) Register(ctx context.Context, a0 *User) (r0 *IUserResult, err error) {
 	err = s.caller("Register", ctx, []any{a0}, []any{&r0})
 	return
@@ -608,6 +704,52 @@ func (s prompter_reflect_stub) Retrieve(ctx context.Context, a0 *Prompt) (r0 *Pr
 }
 
 // AutoMarshal implementations.
+
+var _ codegen.AutoMarshal = (*IPromptListResult)(nil)
+
+type __is_IPromptListResult[T ~struct {
+	weaver.AutoMarshal
+	Prompts []Prompt "json:\"prompts\""
+}] struct{}
+
+var _ __is_IPromptListResult[IPromptListResult]
+
+func (x *IPromptListResult) WeaverMarshal(enc *codegen.Encoder) {
+	if x == nil {
+		panic(fmt.Errorf("IPromptListResult.WeaverMarshal: nil receiver"))
+	}
+	serviceweaver_enc_slice_Prompt_e51fb0c6(enc, x.Prompts)
+}
+
+func (x *IPromptListResult) WeaverUnmarshal(dec *codegen.Decoder) {
+	if x == nil {
+		panic(fmt.Errorf("IPromptListResult.WeaverUnmarshal: nil receiver"))
+	}
+	x.Prompts = serviceweaver_dec_slice_Prompt_e51fb0c6(dec)
+}
+
+func serviceweaver_enc_slice_Prompt_e51fb0c6(enc *codegen.Encoder, arg []Prompt) {
+	if arg == nil {
+		enc.Len(-1)
+		return
+	}
+	enc.Len(len(arg))
+	for i := 0; i < len(arg); i++ {
+		(arg[i]).WeaverMarshal(enc)
+	}
+}
+
+func serviceweaver_dec_slice_Prompt_e51fb0c6(dec *codegen.Decoder) []Prompt {
+	n := dec.Len()
+	if n == -1 {
+		return nil
+	}
+	res := make([]Prompt, n)
+	for i := 0; i < n; i++ {
+		(&res[i]).WeaverUnmarshal(dec)
+	}
+	return res
+}
 
 var _ codegen.AutoMarshal = (*IPromptResult)(nil)
 
@@ -768,6 +910,24 @@ func serviceweaver_dec_ptr_User_29f1f4c9(dec *codegen.Decoder) *User {
 		return nil
 	}
 	var res User
+	(&res).WeaverUnmarshal(dec)
+	return &res
+}
+
+func serviceweaver_enc_ptr_IPromptListResult_c31a6ab9(enc *codegen.Encoder, arg *IPromptListResult) {
+	if arg == nil {
+		enc.Bool(false)
+	} else {
+		enc.Bool(true)
+		(*arg).WeaverMarshal(enc)
+	}
+}
+
+func serviceweaver_dec_ptr_IPromptListResult_c31a6ab9(dec *codegen.Decoder) *IPromptListResult {
+	if !dec.Bool() {
+		return nil
+	}
+	var res IPromptListResult
 	(&res).WeaverUnmarshal(dec)
 	return &res
 }

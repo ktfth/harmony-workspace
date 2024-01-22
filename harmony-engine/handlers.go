@@ -277,32 +277,49 @@ func RetrievePrompt(ctx context.Context, app *app, p Prompter, w http.ResponseWr
 
 	id := strings.TrimPrefix(r.URL.Path, "/bin/")
 
-	var idInt, errId = strconv.Atoi(id)
+	if id == "" {
+		var promptList, errPromptList = p.List(ctx)
+		if errPromptList != nil {
+			http.Error(w, errPromptList.Error(), http.StatusInternalServerError)
+			return
+		}
 
-	if errId != nil {
-		http.Error(w, errId.Error(), http.StatusBadRequest)
+		logger.Info("bin request is a GET with no id")
+
+		var promptListInJson, _ = json.MarshalIndent(promptList, "", "  ")
+		var promptListOut = string(promptListInJson)
+
+		logger.Info("bin request is a GET with no id and a json")
+
+		fmt.Fprintf(w, "%v", promptListOut)
+	} else {
+		var idInt, errId = strconv.Atoi(id)
+
+		if errId != nil {
+			http.Error(w, errId.Error(), http.StatusBadRequest)
+			return
+		}
+
+		logger.Info("bin request is a GET with an id")
+
+		var prompt = &Prompt{
+			Id: idInt,
+		}
+		var promptResult, errPrompt = p.Retrieve(ctx, prompt)
+		if errPrompt != nil {
+			http.Error(w, errPrompt.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		logger.Info("bin request is a GET with an id and a prompt")
+
+		var promptResultInJson, _ = json.MarshalIndent(promptResult, "", "  ")
+		var promptOut = string(promptResultInJson)
+
+		logger.Info("bin request is a GET with an id and a prompt and a json")
+
+		fmt.Fprintf(w, "%v", promptOut)
+
 		return
 	}
-
-	logger.Info("bin request is a GET with an id")
-
-	var prompt = &Prompt{
-		Id: idInt,
-	}
-	var promptResult, errPrompt = p.Retrieve(ctx, prompt)
-	if errPrompt != nil {
-		http.Error(w, errPrompt.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	logger.Info("bin request is a GET with an id and a prompt")
-
-	var promptResultInJson, _ = json.MarshalIndent(promptResult, "", "  ")
-	var promptOut = string(promptResultInJson)
-
-	logger.Info("bin request is a GET with an id and a prompt and a json")
-
-	fmt.Fprintf(w, "%v", promptOut)
-
-	return
 }

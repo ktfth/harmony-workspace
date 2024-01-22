@@ -21,6 +21,8 @@ type Prompter interface {
 
 	// Retrieve retrieves a prompt based on the provided prompt object.
 	Retrieve(context.Context, *Prompt) (*Prompt, error)
+
+	List(context.Context) (*IPromptListResult, error)
 }
 
 // prompter represents a prompter implementation that implements the Prompter interface.
@@ -182,4 +184,33 @@ func (p *prompter) Retrieve(ctx context.Context, prompt *Prompt) (*Prompt, error
 	logger.Info("prompt retrieved")
 
 	return &data, nil
+}
+
+func (p *prompter) List(ctx context.Context) (*IPromptListResult, error) {
+	var logger = p.Logger(ctx)
+
+	logger.Info("listing prompts")
+
+	var q = "SELECT id, text, model, tags FROM prompts;"
+	var data []Prompt
+
+	rows, err := p.db.QueryContext(ctx, q)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var prompt Prompt
+		if err := rows.Scan(&prompt.Id, &prompt.Text, &prompt.Model, &prompt.Tags); err != nil {
+			return nil, err
+		}
+		data = append(data, prompt)
+	}
+
+	logger.Info("prompts listed")
+
+	return &IPromptListResult{
+		Prompts: data,
+	}, nil
 }
