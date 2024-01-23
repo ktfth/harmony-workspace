@@ -222,7 +222,7 @@
                 </li>
 
                 <template x-for="prompt in binListResult.prompts" :key="prompt.id">
-                    <li class="mt-2 mb-3 p-2 rounded-lg bg-zinc-200">
+                    <li x-show="binListResult.prompts !== null" class="mt-5 mb-3 p-2 rounded-lg bg-zinc-200">
                         <p x-text="prompt.text"></p>
                     </li>
                 </template>

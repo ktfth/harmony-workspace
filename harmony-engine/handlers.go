@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func handleIndex(ctx context.Context, app *app) http.HandlerFunc {
@@ -242,6 +243,12 @@ func CreatePrompt(ctx context.Context, app *app, p Prompter, w http.ResponseWrit
 		http.Error(w, errsPromptText.Error(), http.StatusBadRequest)
 		return
 	}
+
+	now := time.Now()
+	nsec := now.UnixNano()
+
+	prompt.CreatedAt = nsec
+	prompt.UpdatedAt = nsec
 
 	logger.Info("bin request is a POST with a prompt and validations")
 

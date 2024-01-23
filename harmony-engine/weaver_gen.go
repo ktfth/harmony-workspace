@@ -801,10 +801,12 @@ var _ codegen.AutoMarshal = (*Prompt)(nil)
 
 type __is_Prompt[T ~struct {
 	weaver.AutoMarshal
-	Id    int    "json:\"id\""
-	Text  string "json:\"text\""
-	Model string "json:\"model\""
-	Tags  string "json:\"tags\""
+	Id        int    "json:\"id\""
+	Text      string "json:\"text\""
+	Model     string "json:\"model\""
+	Tags      string "json:\"tags\""
+	CreatedAt int64  "json:\"created_at\""
+	UpdatedAt int64  "json:\"updated_at\""
 }] struct{}
 
 var _ __is_Prompt[Prompt]
@@ -817,6 +819,8 @@ func (x *Prompt) WeaverMarshal(enc *codegen.Encoder) {
 	enc.String(x.Text)
 	enc.String(x.Model)
 	enc.String(x.Tags)
+	enc.Int64(x.CreatedAt)
+	enc.Int64(x.UpdatedAt)
 }
 
 func (x *Prompt) WeaverUnmarshal(dec *codegen.Decoder) {
@@ -827,6 +831,8 @@ func (x *Prompt) WeaverUnmarshal(dec *codegen.Decoder) {
 	x.Text = dec.String()
 	x.Model = dec.String()
 	x.Tags = dec.String()
+	x.CreatedAt = dec.Int64()
+	x.UpdatedAt = dec.Int64()
 }
 
 var _ codegen.AutoMarshal = (*User)(nil)
@@ -981,6 +987,8 @@ func serviceweaver_size_Prompt_575b9be2(x *Prompt) int {
 	size += (4 + len(x.Text))
 	size += (4 + len(x.Model))
 	size += (4 + len(x.Tags))
+	size += 8
+	size += 8
 	return size
 }
 

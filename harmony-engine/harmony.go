@@ -147,8 +147,8 @@ func (p *prompter) Bin(ctx context.Context, prompt *Prompt) (*IPromptResult, err
 		}, nil
 	}
 
-	q = "INSERT INTO prompts (text, model, tags) VALUES (?, ?, ?);"
-	var result, errExec = p.db.ExecContext(ctx, q, prompt.Text, prompt.Model, prompt.Tags)
+	q = "INSERT INTO prompts (text, model, tags, created_at, updated_at) VALUES (?, ?, ?, ?, ?);"
+	var result, errExec = p.db.ExecContext(ctx, q, prompt.Text, prompt.Model, prompt.Tags, prompt.CreatedAt, prompt.UpdatedAt)
 
 	if errExec != nil {
 		return &IPromptResult{
@@ -174,10 +174,10 @@ func (p *prompter) Retrieve(ctx context.Context, prompt *Prompt) (*Prompt, error
 
 	logger.Info("retrieving prompt")
 
-	var q = "SELECT id, text, model, tags FROM prompts WHERE id = ?;"
+	var q = "SELECT id, text, model, tags, created_at, updated_at FROM prompts WHERE id = ?;"
 	var data Prompt
 
-	if err := p.db.QueryRowContext(ctx, q, prompt.Id).Scan(&data.Id, &data.Text, &data.Model, &data.Tags); err != nil {
+	if err := p.db.QueryRowContext(ctx, q, prompt.Id).Scan(&data.Id, &data.Text, &data.Model, &data.Tags, &data.CreatedAt, &data.UpdatedAt); err != nil {
 		return nil, err
 	}
 
@@ -191,7 +191,7 @@ func (p *prompter) List(ctx context.Context) (*IPromptListResult, error) {
 
 	logger.Info("listing prompts")
 
-	var q = "SELECT id, text, model, tags FROM prompts;"
+	var q = "SELECT id, text, model, tags, created_at, updated_at FROM prompts ORDER BY updated_at DESC;"
 	var data []Prompt
 
 	rows, err := p.db.QueryContext(ctx, q)
@@ -202,7 +202,7 @@ func (p *prompter) List(ctx context.Context) (*IPromptListResult, error) {
 
 	for rows.Next() {
 		var prompt Prompt
-		if err := rows.Scan(&prompt.Id, &prompt.Text, &prompt.Model, &prompt.Tags); err != nil {
+		if err := rows.Scan(&prompt.Id, &prompt.Text, &prompt.Model, &prompt.Tags, &prompt.CreatedAt, &prompt.UpdatedAt); err != nil {
 			return nil, err
 		}
 		data = append(data, prompt)
