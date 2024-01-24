@@ -705,6 +705,29 @@ func (s prompter_reflect_stub) Retrieve(ctx context.Context, a0 *Prompt) (r0 *Pr
 
 // AutoMarshal implementations.
 
+var _ codegen.AutoMarshal = (*IAuthResult)(nil)
+
+type __is_IAuthResult[T ~struct {
+	weaver.AutoMarshal
+	Token string "json:\"token\""
+}] struct{}
+
+var _ __is_IAuthResult[IAuthResult]
+
+func (x *IAuthResult) WeaverMarshal(enc *codegen.Encoder) {
+	if x == nil {
+		panic(fmt.Errorf("IAuthResult.WeaverMarshal: nil receiver"))
+	}
+	enc.String(x.Token)
+}
+
+func (x *IAuthResult) WeaverUnmarshal(dec *codegen.Decoder) {
+	if x == nil {
+		panic(fmt.Errorf("IAuthResult.WeaverUnmarshal: nil receiver"))
+	}
+	x.Token = dec.String()
+}
+
 var _ codegen.AutoMarshal = (*IPromptListResult)(nil)
 
 type __is_IPromptListResult[T ~struct {

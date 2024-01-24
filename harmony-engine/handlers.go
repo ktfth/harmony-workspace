@@ -211,7 +211,14 @@ func AuthHandler(ctx context.Context, app *app, p Prompter, w http.ResponseWrite
 				fmt.Errorf("No username found")
 			}
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, tokenString)
+
+			var tokenResult = &IAuthResult{
+				Token: tokenString,
+			}
+			var tokenResultInJson, _ = json.MarshalIndent(tokenResult, "", "  ")
+			var tokenOut = string(tokenResultInJson)
+
+			fmt.Fprint(w, tokenOut)
 			return
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)

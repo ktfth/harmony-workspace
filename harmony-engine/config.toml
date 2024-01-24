@@ -2,10 +2,10 @@
 binary = ".\\harmony-engine.exe"
 
 [single]
-listeners.bin = {address = "localhost:12345"}
+listeners.bin = {address = "localhost:9000"}
 
 [multi]
-listeners.bin = {address = "localhost:12345"}
+listeners.bin = {address = "localhost:9000"}
 
 ["harmony-engine/Prompter"]
 Driver = "mysql"
